@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MRT — Inducción Interactiva v2 | Sync Global</title>
+<style>
+  :root{--neg:#000000;--oro:#C29B23;--oro2:#E5C158;--orotxt:#A07F15;--ok:#27AE60;--bad:#C0392B;--gris:#F7F4EC;--txt:#000000;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif;}
+  body{background:var(--gris);color:var(--txt);}
+  .layout{display:flex;min-height:100vh;}
+  aside{width:280px;background:var(--neg);color:#fff;padding:24px 0;position:fixed;top:0;bottom:0;overflow-y:auto;}
+  aside h1{font-size:22px;padding:0 20px 4px;color:var(--oro2);}
+  aside .sub{font-size:12px;opacity:.8;padding:0 20px 16px;border-bottom:1px solid rgba(255,255,255,.2);}
+  .navitem{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;font-size:14px;border-left:4px solid transparent;}
+  .navitem:hover{background:rgba(255,255,255,.08);}
+  .navitem.active{background:rgba(255,255,255,.14);border-left-color:var(--oro2);font-weight:600;}
+  .navitem .dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+  .navitem.done .dot{background:var(--ok);border-color:var(--ok);}
+  .progresswrap{padding:16px 20px;}
+  .progressbar{background:rgba(255,255,255,.2);border-radius:8px;height:10px;overflow:hidden;}
+  .progressbar>div{background:var(--oro2);height:100%;width:0;transition:width .4s;}
+  .progresstxt{font-size:12px;margin-top:6px;opacity:.9;}
+  main{margin-left:280px;flex:1;padding:36px 48px;max-width:1000px;}
+  main.full{margin-left:0;max-width:760px;margin:0 auto;}
+  .card{background:#fff;border-radius:12px;padding:28px 32px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:20px;}
+  h2{color:var(--neg);font-size:26px;margin-bottom:6px;}
+  h3{color:var(--orotxt);font-size:18px;margin:18px 0 8px;}
+  p,li{font-size:15px;line-height:1.6;margin-bottom:8px;}
+  ul{padding-left:22px;margin-bottom:10px;}
+  .tag{display:inline-block;background:var(--oro);color:#000;font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;margin-bottom:10px;}
+  .rule{background:var(--gris);border-left:5px solid var(--bad);padding:12px 16px;border-radius:0 8px 8px 0;margin:8px 0;font-size:15px;}
+  .btn{background:var(--oro2);color:#000;border:none;padding:12px 26px;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;margin-right:8px;}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.sec{background:var(--oro);color:#000;}
+  .btn.dark{background:var(--neg);color:var(--oro2);}
+  .btn:disabled{background:#bbb;cursor:not-allowed;}
+  .q{background:var(--gris);border-radius:10px;padding:16px 18px;margin:12px 0;}
+  .q p{font-weight:600;}
+  .opt{display:block;background:#fff;border:2px solid #ddd;border-radius:8px;padding:10px 14px;margin:8px 0;cursor:pointer;font-size:14px;}
+  .opt:hover{border-color:var(--oro);}
+  .opt.sel{border-color:var(--oro);background:#F8F1DC;}
+  .opt.right{border-color:var(--ok);background:#E8F8EF;}
+  .opt.wrong{border-color:var(--bad);background:#FDEDEB;}
+  .feedback{font-size:14px;font-weight:600;margin-top:6px;display:none;}
+  .score{font-size:18px;font-weight:700;margin-top:14px;display:none;}
+  input[type=text],input[type=password],textarea,select{padding:10px 12px;border:2px solid #ccc;border-radius:8px;font-size:14px;width:100%;max-width:100%;font-family:inherit;background:#fff;}
+  textarea{min-height:64px;resize:vertical;}
+  .check{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:10px 14px;margin:6px 0;font-size:14px;cursor:pointer;}
+  .check input{margin-top:3px;transform:scale(1.3);width:auto;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .mini{background:var(--gris);border-radius:10px;padding:14px 16px;}
+  .mini b{color:var(--orotxt);}
+  .stat{background:var(--neg);color:var(--oro2);border-radius:10px;padding:16px;text-align:center;}
+  .stat .big{font-size:28px;font-weight:800;}
+  .stat .lbl{font-size:12px;color:#D9D9D9;margin-top:4px;}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;}
+  th{background:var(--neg);color:var(--oro2);padding:8px 10px;text-align:left;}
+  td{border:1px solid #ddd;padding:8px 10px;vertical-align:top;}
+  .cert{border:6px double var(--neg);padding:40px;text-align:center;background:#fff;}
+  .cert h2{font-size:30px;}
+  .cert .name{font-size:26px;color:var(--oro);font-weight:700;margin:14px 0;}
+  .locknote{font-size:13px;color:#888;font-style:italic;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:700;margin-bottom:4px;color:#333;}
+  fieldset{border:2px solid var(--oro);border-radius:10px;padding:16px 18px;margin-bottom:22px;background:#fff;}
+  legend{font-weight:800;color:var(--orotxt);padding:0 8px;font-size:16px;}
+  .qz-block{border:1px solid #ddd;border-radius:10px;padding:12px;margin-bottom:12px;background:var(--gris);}
+  .qz-block .row{display:flex;gap:8px;margin-top:6px;align-items:center;}
+  .qz-block .row span{font-size:12px;font-weight:700;width:18px;}
+  .del{background:var(--bad);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;float:right;}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--neg);}
+  .login{background:#fff;border-radius:14px;padding:40px;max-width:520px;width:92%;text-align:center;border-top:8px solid var(--oro2);}
+  .login h1{color:var(--neg);font-size:30px;}
+  .login .gold{color:var(--orotxt);font-weight:700;}
+  .rolebtn{display:block;width:100%;margin:10px 0;padding:16px;border-radius:10px;border:2px solid var(--oro);background:#fff;font-size:16px;font-weight:700;cursor:pointer;}
+  .rolebtn:hover{background:#F8F1DC;}
+  .rolebtn small{display:block;font-weight:400;color:#666;margin-top:3px;}
+  .badge-admin{background:var(--neg);color:var(--oro2);font-size:11px;padding:2px 8px;border-radius:10px;margin-left:6px;}
+  @media print{aside,.btn,.noprint{display:none!important;}main{margin:0;padding:0;}body{background:#fff;}}
+  @media(max-width:820px){aside{position:static;width:100%;}main{margin:0;padding:20px;}.layout{flex-direction:column;}.grid2,.grid3{grid-template-columns:1fr;}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+<style>
+  .sync-bar{position:fixed;bottom:0;left:0;right:0;background:var(--neg);color:var(--oro2);font-size:12px;padding:5px 14px;display:flex;align-items:center;gap:8px;z-index:9999;border-top:2px solid var(--oro);}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block;flex-shrink:0;}
+  .sync-dot.live{background:#22c55e;animation:sdpulse 2s infinite;}
+  @keyframes sdpulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .sync-banner{background:#E8F8EF;border:1px solid #27AE60;border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:13px;color:#1a6e3a;display:none;}
+  .sync-banner.show{display:block;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script id="mrt-config" type="application/json">{
+ "version": 1,
+ "adminPass": "MRT2026",
+ "empresa": {
+   "historia": "Minera Río Tinto fue fundada en Chihuahua, México en 1994 para promover proyectos de exploración mineral en el noroeste del país. A lo largo de los años la empresa creció de manera sostenida: en 2008 amplió sus operaciones de exploración y en 2009 se consolidó para afrontar una alta tasa de crecimiento. Hoy somos una empresa privada de minería y metales que se dedica a encontrar, explorar, minar, procesar y comercializar recursos minerales esenciales. Nuestros principales productos incluyen oro, plata, cobre, zinc y plomo. Nos enfocamos en operaciones medianas con alto grado de minerales que generan un alto flujo de efectivo, en diversas unidades a lo largo del noroeste de México. Impulsamos el desarrollo de las comunidades donde operamos mediante empleo, infraestructura y modelos de sostenibilidad que aseguren su progreso a largo plazo. Con más de 30 años de trayectoria, MRT es un referente de minería eficiente, segura y responsable en la región.",
+   "mision": "En Minera Río Tinto, nos dedicamos a la exploración, extracción, procesamiento y comercialización de recursos minerales esenciales, con un enfoque en oro, plata, cobre, zinc y plomo. Operamos con un compromiso inquebrantable hacia la seguridad, la eficiencia y la responsabilidad ambiental, asegurando una minería sostenible que genere valor a largo plazo. Fomentamos un entorno de trabajo diverso e inclusivo, donde el talento de nuestra gente es reconocido y potenciado. Además, impulsamos el desarrollo de las comunidades en las que operamos a través de empleo, infraestructura y modelos de sostenibilidad que aseguren su progreso y bienestar.",
+   "vision": "Ser una empresa minera líder en la producción de metales preciosos y base, reconocida por su excelencia operativa, innovación y compromiso con el desarrollo sostenible. Buscamos consolidarnos como un referente en minería eficiente y responsable en el noroeste de México, optimizando el uso de recursos, maximizando la rentabilidad de nuestros proyectos y dejando un impacto positivo en el entorno social y ambiental donde operamos.",
+   "valores": [
+     {"n": "Integridad", "d": "Nos comportamos de manera apropiada y ética en todo momento; somos responsables de nuestras decisiones y actos, tanto en el trabajo como en nuestra relación con las comunidades y el entorno."},
+     {"n": "Honestidad", "d": "Expresamos nuestras ideas con sinceridad y respeto. Somos transparentes en nuestra comunicación y en el manejo de la información de la empresa."},
+     {"n": "Respeto", "d": "Tratamos a cada persona con dignidad y consideración. Valoramos las diferencias individuales y fomentamos un entorno de trabajo seguro, inclusivo y libre de discriminación."},
+     {"n": "Trabajo en equipo", "d": "Somos un solo equipo: valoramos el trabajo de los demás y colaboramos de manera coordinada, complementaria y comprometida para alcanzar nuestras metas comunes."}
+   ],
+   "anios": "30+",
+   "colaboradores": "[Por confirmar con RRHH]",
+   "sitios": "Noroeste de México — Chihuahua: Unidad Villa Matamoros, Cieneguita, Minas Olivos, Realito y Proyecto Namiquipa, entre otras unidades operativas.",
+   "organigrama": "MRT tiene un plan de crecimiento interno estructurado en 5 niveles: Ayudante General (nuevo ingreso, aprende los aspectos básicos de su área), Categoría B (supera el período de prueba y domina su área inicial), Categoría A (domina 2 áreas de trabajo y resuelve conflictos bajo presión), Categoría AA (multifuncional, domina 3 o más áreas, es el apoyo clave del supervisor) y Supervisor (dominio total teórico-práctico, liderazgo y gestión de KPIs operativos). Para temas operativos acude a tu jefe directo; para prestaciones y documentación a RRHH; para seguridad e higiene al área de EHS."
+ },
+ "prellegada": {
+   "mensaje": "¡Bienvenido a la familia MRT! Nos da mucho gusto que te unas a nuestro equipo. Antes de tu primer día, este módulo te presenta la empresa y todo lo que debes saber para llegar con confianza y sin sorpresas. En MRT creemos en el crecimiento de nuestra gente: aquí puedes desarrollarte y construir una carrera sólida.",
+   "horario": "[CONFIRMAR CON RRHH: fecha, hora y lugar exacto de presentación, y con quién preguntar al llegar]",
+   "vestimenta": "Ropa de trabajo cómoda y resistente. Si tu puesto requiere EPP (casco, botas de seguridad, lentes, guantes), se te entregará al ingresar. Usa calzado cerrado y de suela resistente desde tu primer día.",
+   "transporte": "[CONFIRMAR CON RRHH: ruta de transporte de personal, horario y punto de abordaje, o indicaciones para llegar a tu unidad]",
+   "queLlevar": ["Identificación oficial vigente (INE o pasaporte)", "CURP y Número de Seguridad Social (NSS) si ya cuentas con ellos", "Comprobante de domicilio reciente", "Documentos solicitados por RRHH en tu llamada de bienvenida", "Calzado cerrado y de suela resistente", "Actitud positiva y disposición para aprender"],
+   "contactoDudas": "[CONFIRMAR CON RRHH: nombre, teléfono y correo del contacto de RRHH para dudas previas al ingreso]"
+ },
+ "rrhh": {
+   "pago": "Catorcenal (cada 14 días). El cierre de nómina es los días viernes. El pago se realiza mediante depósito bancario a la cuenta personal que proporcionaste al ingresar; si aún no tienes cuenta bancaria, se entregará cheque nominativo a tu nombre.",
+   "prestaciones": [
+     "IMSS desde el primer día de trabajo; puedes afiliar a tu cónyuge, hijos y padres",
+     "Aguinaldo: 15 días de salario, pagado a más tardar el 20 de diciembre (Art. 87 LFT)",
+     "Vacaciones: 12 días al primer año de servicio, con 2 días adicionales por cada año siguiente hasta 5 años, luego 2 días más por cada 5 años adicionales (Art. 76 LFT)",
+     "Prima vacacional: 25% del salario proporcional al período vacacional",
+     "Días festivos obligatorios: 1 de enero, 3 de febrero, 17 de marzo, 1 de mayo, 16 de septiembre, 17 de noviembre y 25 de diciembre",
+     "Contrato inicial de 90 días (2 contratos de 45 días c/u); al superarlo satisfactoriamente se confirma tu relación laboral definitiva"
+   ],
+   "contactoNomina": "[CONFIRMAR CON RRHH: nombre, extensión y correo del contacto de nómina]",
+   "canalDenuncia": "[CONFIRMAR CON RRHH: teléfono, correo o buzón del canal de denuncia. Toda denuncia se atiende con confidencialidad y sin represalias]"
+ },
+ "seguridad": {
+   "reglas": [
+     "Llego a trabajar descansado y libre de alcohol y drogas. La empresa puede realizar pruebas de detección en cualquier momento.",
+     "Uso mi EPP completo y en buen estado donde se requiere, sin excepción: casco, lentes de seguridad, botas con casquillo, guantes, protección auditiva y respiratoria según el área.",
+     "No opero equipos, maquinaria o vehículos de la empresa sin estar capacitado y autorizado expresamente por mi supervisor.",
+     "Respeto los permisos de trabajo de alto riesgo y el procedimiento de bloqueo y etiquetado de energías (LOTO) al intervenir cualquier equipo.",
+     "Si una tarea no es segura, la detengo y la reporto a mi supervisor de inmediato. Tengo tanto la autoridad como la obligación de parar el trabajo.",
+     "Reporto de inmediato cualquier accidente, incidente o condición insegura al servicio médico y a mi jefe directo; en caso de accidente de trabajo, también se notifica al IMSS el mismo día.",
+     "No introduzco ni consumo bebidas alcohólicas, drogas ni sustancias tóxicas dentro de las instalaciones, vehículos o áreas operativas de la empresa."
+   ],
+   "emergencias": "[CONFIRMAR CON EHS: número o canal interno de emergencias de tu unidad operativa]",
+   "ambiente": "Separa los residuos en los contenedores asignados por tipo (peligrosos, no peligrosos y reciclables). Reporta de inmediato cualquier derrame o fuga a tu supervisor y al área de EHS. Cumple todas las medidas establecidas por la Comisión de Seguridad e Higiene y participa activamente en los simulacros programados. El cuidado del medio ambiente es responsabilidad de todos."
+ },
+ "herramientas": "[CONFIRMAR CON TU JEFE DIRECTO: sistemas y herramientas específicos de tu puesto — correo corporativo, ERP (SAP Business One para puestos administrativos y contables), reloj checador, aplicaciones de RRHH, y canales oficiales de comunicación interna de MRT]",
+ "contactos": {
+   "rrhh": "[CONFIRMAR: nombre · ext. · correo del área de RRHH]",
+   "ehs": "[CONFIRMAR: nombre · ext. · correo del área de EHS / Seguridad e Higiene]",
+   "emergencias": "[CONFIRMAR: número de emergencias / canal de radio de tu unidad]"
+ },
+ "quizzes": {
+   "PRE": [
+     {"q": "¿En qué año fue fundada Minera Río Tinto?", "o": ["2001", "1994", "1985"], "a": 1},
+     {"q": "¿Cuáles son los principales minerales que produce MRT?", "o": ["Hierro, carbón y manganeso", "Oro, plata, cobre, zinc y plomo", "Sal, yeso y arena"], "a": 1},
+     {"q": "Antes de tu primer día, ¿qué debes tener claro?", "o": ["Nada, todo se resuelve al llegar", "Dónde, cuándo y con quién presentarme, y qué debo llevar", "Solo mi sueldo"], "a": 1}
+   ],
+   "A": [
+     {"q": "¿Cuál es la misión de Minera Río Tinto?", "o": ["Ser la empresa más grande del mundo", "Explorar, extraer, procesar y comercializar recursos minerales con compromiso a la seguridad, eficiencia y responsabilidad ambiental", "Producir solo para el mercado local"], "a": 1},
+     {"q": "Los valores de MRT son…", "o": ["Integridad, Honestidad, Respeto y Trabajo en equipo", "Velocidad, Crecimiento y Competencia", "Secreto, Obediencia y Puntualidad"], "a": 0},
+     {"q": "¿En qué región de México opera principalmente MRT?", "o": ["El Bajío (Guanajuato, Jalisco)", "El noroeste de México, principalmente Chihuahua", "El sureste (Yucatán, Tabasco)"], "a": 1},
+     {"q": "Si tengo dudas sobre la empresa durante mis primeros días, ¿a quién acudo?", "o": ["A nadie, espero a que se resuelva solo", "A mi padrino/a, a mi jefe directo o a RRHH", "A personas ajenas a la empresa"], "a": 1}
+   ],
+   "B": [
+     {"q": "¿Cuándo puedo iniciar actividades en campo o área operativa?", "o": ["Cuando mi jefe tenga prisa", "Solo después de completar y aprobar la inducción de seguridad", "Después de la primera semana, haya o no inducción"], "a": 1},
+     {"q": "Si detecto una condición insegura debo…", "o": ["Reportarla de inmediato a mi supervisor; si hay riesgo grave, detener el trabajo", "Ignorarla si no es mi área", "Esperar a que alguien más la reporte"], "a": 0},
+     {"q": "El Equipo de Protección Personal (EPP) en MRT…", "o": ["Es opcional si tengo experiencia", "Se usa completo y en buen estado en las áreas que lo requieren, sin excepción", "Solo se usa cuando hay auditoría"], "a": 1},
+     {"q": "¿Qué cubre el IMSS desde el primer día en MRT?", "o": ["Solo al trabajador, sin familiares", "Al trabajador y puede afiliarse a cónyuge, hijos y padres", "Solo a los supervisores y personal de planta"], "a": 1},
+     {"q": "Trabajar bajo efectos de alcohol o drogas en MRT…", "o": ["Está prohibido y es causa de sanción grave hasta rescisión de contrato", "Se permite en festejos de la empresa", "Solo está prohibido para operadores de maquinaria"], "a": 0}
+   ],
+   "C": [
+     {"q": "¿Con qué frecuencia se paga la nómina en MRT?", "o": ["Semanal", "Catorcenal (cada 14 días)", "Mensual"], "a": 1},
+     {"q": "¿Cuántos días de aguinaldo otorga MRT?", "o": ["7 días de salario", "15 días de salario (Art. 87 LFT)", "30 días de salario"], "a": 1},
+     {"q": "Si vivo una situación de acoso o un acto contrario al código de ética…", "o": ["Lo dejo pasar para no tener problemas", "Lo reporto por el canal de denuncia o con RRHH; hay protección contra represalias", "Lo publico en redes sociales"], "a": 1},
+     {"q": "¿Cuánto dura el contrato inicial en MRT?", "o": ["30 días (1 contrato)", "90 días (2 contratos de 45 días c/u)", "6 meses (1 contrato)"], "a": 1}
+   ],
+   "P": [
+     {"q": "El plan de crecimiento interno de MRT va desde Ayudante General hasta…", "o": ["Gerente General", "Supervisor, pasando por Categorías B, A y AA", "Director de Operaciones"], "a": 1},
+     {"q": "Mi padrino o madrina es…", "o": ["La persona que me acompaña, entrena y resuelve dudas mis primeros 90 días", "Mi jefe directo automáticamente", "Alguien de otra empresa asignado por RRHH"], "a": 0},
+     {"q": "Al día 90 se espera que yo…", "o": ["Apenas esté conociendo el puesto", "Desempeñe mi puesto de forma autónoma y al estándar, con seguridad", "Ya haya sido promovido a Categoría A"], "a": 1}
+   ]
+ }
+}</script>
+<script>
+/* ===== Copia prístina del documento (para exportar versiones editadas) ===== */
+var PRISTINE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+
+/* ===== Configuración ===== */
+function readBakedCfg(){ return JSON.parse(document.getElementById("mrt-config").textContent); }
+var BAKED = readBakedCfg();
+var CFG = JSON.parse(JSON.stringify(BAKED));
+try{
+  var ov = localStorage.getItem("mrt_cfg");
+  if(ov){ ov = JSON.parse(ov); if(ov && ov.v === BAKED.version && ov.cfg){ CFG = ov.cfg; } }
+}catch(e){}
+// ============================
+// GUN.JS — SYNC GLOBAL
+// ============================
+var FIXED_ROOM = 'mrt-induccion-mrt-2026';
+var gun, room, gunReady = false;
+var allCompletions = {}; // name -> {done, quiz, ts}
+
+try {
+  gun = Gun({peers:['https://peer.wallie.io/gun','https://gundb-relay-mlc.herokuapp.com/gun']});
+  room = gun.get(FIXED_ROOM);
+  gunReady = true;
+  var sd = document.getElementById('syncDot');
+  var sl = document.getElementById('syncLabel');
+  if(sd) sd.classList.add('live');
+  if(sl) sl.textContent = 'Sincronizado';
+} catch(e) {
+  var sl2 = document.getElementById('syncLabel');
+  if(sl2) sl2.textContent = 'Sin red (solo local)';
+}
+
+function syncCfgToGun() {
+  if(!gunReady) return;
+  room.get('cfg').put(JSON.stringify(CFG));
+}
+
+function listenGun() {
+  if(!gunReady) return;
+  // Listen for admin CFG changes from any device
+  room.get('cfg').on(function(v) {
+    if(!v) return;
+    try {
+      var newCfg = JSON.parse(v);
+      // Only update if different from current
+      if(JSON.stringify(newCfg) !== JSON.stringify(CFG)) {
+        CFG = newCfg;
+        saveCfgLocal();
+        // Re-render current view silently
+        if(S.role === 'user') { render(); }
+        else if(S.role === 'admin') { renderAdmin(); }
+        showSyncBanner('✅ Contenido actualizado por RRHH desde otra computadora.');
+      }
+    } catch(ex) {}
+  });
+  // Listen for user completions
+  room.get('completions').on(function(data) {
+    if(!data) return;
+    try {
+      Object.keys(data).forEach(function(k) {
+        if(k === '_') return;
+        var v = data[k];
+        if(typeof v === 'string') {
+          try { allCompletions[k] = JSON.parse(v); } catch(ex) {}
+        }
+      });
+      // If admin is watching results, refresh
+      if(S.role === 'admin') {
+        var el = document.getElementById('resultsPanel');
+        if(el) el.innerHTML = buildResultsHTML();
+      }
+    } catch(ex) {}
+  });
+}
+
+function pushUserCompletion() {
+  if(!gunReady || !S.name) return;
+  room.get('completions').get(S.name).put(JSON.stringify({
+    done: S.done, quiz: S.quiz, ts: Date.now()
+  }));
+}
+
+function showSyncBanner(msg) {
+  var el = document.getElementById('syncBannerMsg');
+  if(el) { el.textContent = msg; el.parentElement.classList.add('show'); setTimeout(function(){ el.parentElement.classList.remove('show'); }, 4000); }
+}
+
+
+
+/* ===== Estado ===== */
+var S = { role:null, name:"", done:{}, quiz:{}, mod:0 };
+try{ var saved = localStorage.getItem("mrt_induccion"); if(saved) Object.assign(S, JSON.parse(saved)); }catch(e){}
+S.role = null; // siempre pedir rol al abrir
+function save(){ try{ localStorage.setItem("mrt_induccion", JSON.stringify(S)); }catch(e){} }
+function saveCfgLocal(){ try{ localStorage.setItem("mrt_cfg", JSON.stringify({v:BAKED.version, cfg:CFG})); }catch(e){} }
+function notify(m){ try{ alert(m); }catch(e){} }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* ===== Utilidades de ruta (admin) ===== */
+function getPath(obj, path){ return path.split(".").reduce(function(o,k){ return (o||{})[k]; }, obj); }
+function setPath(obj, path, val){
+  var ks = path.split("."), o = obj;
+  for(var i=0;i<ks.length-1;i++){ o = o[ks[i]]; }
+  o[ks[ks.length-1]] = val;
+}
+
+/* ===== Pantalla de acceso ===== */
+function renderLogin(msg){
+  document.getElementById("app").innerHTML =
+  '<div class="login-wrap"><div class="login">' +
+  '<h1>MRT</h1><p class="gold">Inducción interactiva · Empresa y puesto</p>' +
+  '<p style="margin:14px 0">Selecciona tu perfil para continuar:</p>' +
+  '<button class="rolebtn" onclick="enterUser()">Soy nuevo ingreso<small>Comenzar o continuar mi inducción</small></button>' +
+  '<button class="rolebtn" onclick="showAdminLogin()">Administrador (RRHH)<small>Editar contenido, cuestionarios y exportar el módulo</small></button>' +
+  '<div id="adminlogin" style="display:none;margin-top:14px;text-align:left">' +
+  '<div class="field"><label>Contraseña de administrador</label><input type="password" id="adminpass" placeholder="Contraseña"></div>' +
+  '<button class="btn dark" onclick="tryAdmin(document.getElementById(\'adminpass\').value)">Entrar como administrador</button>' +
+  '<div id="adminerr" style="color:var(--bad);font-weight:700;font-size:13px;margin-top:6px"></div></div>' +
+  (msg?'<p style="color:var(--bad);font-weight:700;margin-top:10px">'+esc(msg)+'</p>':'') +
+  '<p class="locknote" style="margin-top:18px">Tu avance se guarda en este equipo. El contenido se sincroniza automáticamente cuando RRHH hace actualizaciones.</p>' +
+  '</div></div>';
+}
+function showAdminLogin(){ var d=document.getElementById("adminlogin"); d.style.display = d.style.display==="none" ? "block" : "none"; }
+function enterUser(){ S.role="user"; render(); }
+function tryAdmin(pass){
+  if(pass === CFG.adminPass){ S.role="admin"; renderAdmin(); }
+  else { var e=document.getElementById("adminerr"); if(e) e.textContent="Contraseña incorrecta."; }
+}
+function logout(){ S.role=null; renderLogin(); }
+
+/* ===== Módulos (usuario) ===== */
+function quizHTML(key){
+  var qz = CFG.quizzes[key] || [];
+  var passed = S.quiz[key] >= 80;
+  var h = '<div class="card"><h3 style="margin-top:0">📝 Evaluación del módulo ' + (passed ? '— <span style="color:var(--ok)">APROBADA ('+S.quiz[key]+'%)</span>' : '') + '</h3>' +
+   '<p>Selecciona una respuesta por pregunta. Necesitas 80% para aprobar.</p>';
+  qz.forEach(function(item,qi){
+    h += '<div class="q" data-key="'+key+'" data-q="'+qi+'"><p>'+(qi+1)+'. '+esc(item.q)+'</p>';
+    item.o.forEach(function(o,oi){ h += '<span class="opt" onclick="pick(this,\''+key+'\','+qi+','+oi+')">'+esc(o)+'</span>'; });
+    h += '<div class="feedback"></div></div>';
+  });
+  h += '<button class="btn" onclick="grade(\''+key+'\','+qz.length+')">Calificar</button><div class="score" id="score-'+key+'"></div></div>';
+  return h;
+}
+var MODS = [
+ {id:"inicio", nav:"Bienvenida", render:function(){ return '' +
+   '<div class="card"><span class="tag">Inicio</span>' +
+   '<h2>¡Bienvenido(a) a MRT!</h2>' +
+   '<p>Estás por comenzar tu <b>inducción interactiva</b>. Este módulo te acompaña desde antes de tu primer día y es parte de tu proceso formal de onboarding de 90 días.</p>' +
+   '<p>Avanza por cada sección en orden, responde los cuestionarios (necesitas <b>80% o más</b> para aprobar cada uno) y al final obtendrás tu constancia de inducción.</p>' +
+   '<h3>¿Cómo te llamas?</h3>' +
+   '<input type="text" id="inpname" style="max-width:340px" placeholder="Escribe tu nombre completo" value="'+esc(S.name||"")+'">' +
+   '<br><button class="btn" onclick="setName()">Comenzar mi inducción →</button>' +
+   '<p class="locknote" style="margin-top:14px">Tu avance se guarda en este equipo automáticamente.</p></div>'; }},
+ {id:"PRE", nav:"Antes de tu primer día", quiz:"PRE", render:function(){ var c=CFG; return '' +
+   '<div class="card"><span class="tag">Pre-inducción · Complétalo ANTES de llegar</span>' +
+   '<h2>Antes de tu primer día en MRT</h2>' +
+   '<p>'+esc(c.prellegada.mensaje)+'</p>' +
+   '<h3>MRT en datos</h3>' +
+   '<div class="grid3">' +
+   '<div class="stat"><div class="big">'+esc(c.empresa.anios)+'</div><div class="lbl">años de experiencia</div></div>' +
+   '<div class="stat"><div class="big">'+esc(c.empresa.colaboradores)+'</div><div class="lbl">colaboradores</div></div>' +
+   '<div class="stat"><div class="big">📍</div><div class="lbl">'+esc(c.empresa.sitios)+'</div></div></div>' +
+   '<h3>Tu primer día: dónde y cuándo</h3>' +
+   '<div class="mini"><b>Presentación:</b> '+esc(c.prellegada.horario)+'<br><b>Vestimenta:</b> '+esc(c.prellegada.vestimenta)+'<br><b>Cómo llegar / transporte:</b> '+esc(c.prellegada.transporte)+'</div>' +
+   '<h3>¿Qué debo llevar?</h3><ul>' + c.prellegada.queLlevar.map(function(x){return '<li>'+esc(x)+'</li>';}).join("") + '</ul>' +
+   '<h3>Palabras que vas a escuchar en MRT</h3>' +
+   '<table><tr><th>Término</th><th>Qué significa</th></tr>' +
+   '<tr><td><b>EPP</b></td><td>Equipo de Protección Personal: casco, lentes, botas, etc. Se te entrega al ingresar.</td></tr>' +
+   '<tr><td><b>EHS</b></td><td>El área de Seguridad, Salud y Medio Ambiente.</td></tr>' +
+   '<tr><td><b>Inducción de seguridad</b></td><td>Capacitación obligatoria antes de iniciar cualquier actividad operativa.</td></tr>' +
+   '<tr><td><b>DC-3</b></td><td>Constancia oficial de la capacitación que recibes.</td></tr>' +
+   '<tr><td><b>LOTO</b></td><td>Bloqueo y etiquetado de energías al intervenir equipos.</td></tr>' +
+   '<tr><td><b>Padrino / madrina</b></td><td>Compañero(a) experimentado(a) que te acompañará tus primeros 90 días.</td></tr>' +
+   '<tr><td><b>Plan 30·60·90</b></td><td>Tus objetivos de los primeros 90 días, acordados con tu jefe.</td></tr>' +
+   '<tr><td><b>CFDI</b></td><td>Tu recibo de nómina digital timbrado.</td></tr></table>' +
+   '<h3>¿Dudas antes de llegar?</h3>' +
+   '<div class="mini"><b>Contacta a RRHH:</b> '+esc(c.prellegada.contactoDudas)+'</div></div>' +
+   quizHTML("PRE"); }},
+ {id:"A", nav:"Módulo A · Identidad MRT", quiz:"A", render:function(){ var c=CFG.empresa; return '' +
+   '<div class="card"><span class="tag">Módulo A</span>' +
+   '<h2>Identidad MRT: quiénes somos</h2>' +
+   '<h3>Nuestra historia</h3><p>'+esc(c.historia)+'</p>' +
+   '<h3>Misión</h3><p>'+esc(c.mision)+'</p>' +
+   '<h3>Visión</h3><p>'+esc(c.vision)+'</p>' +
+   '<h3>Nuestros valores</h3><div class="grid2">' +
+   c.valores.map(function(v){ return '<div class="mini"><b>'+esc(v.n)+'</b><br>'+esc(v.d)+'</div>'; }).join("") + '</div>' +
+   '<h3>¿Cómo estamos organizados?</h3><p>'+esc(c.organigrama)+'</p></div>' + quizHTML("A"); }},
+ {id:"B", nav:"Módulo B · Seguridad (EHS)", quiz:"B", render:function(){ var sg=CFG.seguridad; return '' +
+   '<div class="card"><span class="tag">Módulo B · Obligatorio</span>' +
+   '<h2>Seguridad, salud y medio ambiente</h2>' +
+   '<p><b>En MRT la seguridad no se negocia.</b> Este módulo refuerza tu inducción presencial de seguridad; no la sustituye. Nadie inicia actividades operativas sin haberla completado y aprobado.</p>' +
+   '<h3>Reglas que salvan vidas</h3>' +
+   sg.reglas.map(function(r,i){ return '<div class="rule">'+(i+1)+'. '+esc(r)+'</div>'; }).join("") +
+   '<h3>Tu equipo de protección personal</h3>' +
+   '<p>Recibirás tu EPP conforme al análisis de riesgos de tu puesto (NOM-017-STPS). Cuídalo, inspecciónalo antes de usarlo y repórtalo si se daña. Su reposición no tiene costo cuando se desgasta por uso normal.</p>' +
+   '<h3>Emergencias</h3><ul>' +
+   '<li>Conoce desde tu primer día las <b>rutas de evacuación</b> y tu <b>punto de reunión</b>.</li>' +
+   '<li>Número/canal interno de emergencias: <b>'+esc(sg.emergencias)+'</b>.</li>' +
+   '<li>En emergencia: conserva la calma, sigue las instrucciones de los brigadistas y nunca regreses por objetos personales.</li></ul>' +
+   '<h3>Salud ocupacional</h3><p>Tu salud se vigila con exámenes médicos periódicos. Gestiona tu descanso e hidratación, y reporta cualquier malestar que afecte tu capacidad de trabajar con seguridad.</p>' +
+   '<h3>Medio ambiente</h3><p>Separa residuos conforme a los contenedores del sitio, reporta derrames y cumple los lineamientos ambientales de tu área. '+esc(sg.ambiente)+'</p></div>' + quizHTML("B"); }},
+ {id:"C", nav:"Módulo C · RRHH y prestaciones", quiz:"C", render:function(){ var r=CFG.rrhh; return '' +
+   '<div class="card"><span class="tag">Módulo C</span>' +
+   '<h2>Tu relación laboral con MRT</h2>' +
+   '<h3>Tu contrato y tu pago</h3><ul>' +
+   '<li>Firmaste un contrato individual de trabajo; conserva tu copia.</li>' +
+   '<li>Tu pago: <b>'+esc(r.pago)+'</b>, con recibo CFDI timbrado.</li>' +
+   '<li>Dudas de nómina: acude a <b>'+esc(r.contactoNomina)+'</b>.</li></ul>' +
+   '<h3>Prestaciones y beneficios</h3><ul>' + r.prestaciones.map(function(x){return '<li>'+esc(x)+'</li>';}).join("") + '</ul>' +
+   '<h3>Reglas de convivencia</h3><ul>' +
+   '<li><b>Reglamento interior de trabajo:</b> horarios, asistencia, permisos y medidas disciplinarias.</li>' +
+   '<li><b>Código de ética:</b> respeto, integridad, cero tolerancia al acoso y a la discriminación.</li>' +
+   '<li><b>Canal de denuncia:</b> '+esc(r.canalDenuncia)+'. Toda denuncia se atiende con confidencialidad y sin represalias.</li></ul>' +
+   '<h3>Tu desarrollo</h3><p>Tu proceso de onboarding dura 90 días e incluye evaluaciones a los 30, 60 y 90 días con retroalimentación de tu jefe. Después, tu desarrollo continúa con la capacitación anual y las oportunidades internas de MRT.</p></div>' + quizHTML("C"); }},
+ {id:"D", nav:"Módulo D · Herramientas", render:function(){ return '' +
+   '<div class="card"><span class="tag">Módulo D</span>' +
+   '<h2>Herramientas y comunicación interna</h2>' +
+   '<p>'+esc(CFG.herramientas)+'</p>' +
+   '<h3>Tips de tus primeras semanas</h3><ul>' +
+   '<li>Anota tus dudas y revísalas con tu padrino en su reunión semanal.</li>' +
+   '<li>Aprende los nombres de tu equipo y de los responsables de tu proceso.</li>' +
+   '<li>Si algo no te quedó claro de la inducción, pide que te lo repitan: preguntar es de profesionales.</li></ul>' +
+   '<button class="btn" onclick="markDone(\'D\')">He revisado este módulo ✓</button></div>'; }},
+ {id:"P", nav:"Inducción al puesto · 30·60·90", quiz:"P", render:function(){ return '' +
+   '<div class="card"><span class="tag">Inducción al puesto</span>' +
+   '<h2>Tus primeros 90 días</h2>' +
+   '<p>La inducción a tu puesto la dirige tu <b>jefe directo</b> con apoyo de tu <b>padrino o madrina</b>. Así se ve tu ruta:</p>' +
+   '<table><tr><th>Etapa</th><th>Qué harás</th><th>Qué se espera de ti</th></tr>' +
+   '<tr><td><b>Semana 1</b></td><td>Inducción a la empresa y a la seguridad; firma de tu Plan 30·60·90</td><td>Aprobar evaluaciones de inducción (≥80%)</td></tr>' +
+   '<tr><td><b>Días 8–30</b></td><td>Observar → hacer con supervisión → hacer con verificación, según tu matriz de habilidades</td><td>Dominar las funciones esenciales con seguridad</td></tr>' +
+   '<tr><td><b>Días 31–60</b></td><td>Operación con autonomía supervisada</td><td>Alcanzar estándares iniciales de productividad y calidad</td></tr>' +
+   '<tr><td><b>Días 61–90</b></td><td>Operación autónoma y evaluación final</td><td>Desempeño al estándar del puesto y confirmación</td></tr></table>' +
+   '<h3>Tus aliados</h3><div class="grid2">' +
+   '<div class="mini"><b>Tu jefe directo</b><br>Define objetivos, te evalúa a los 30/60/90 días y te da retroalimentación formal.</div>' +
+   '<div class="mini"><b>Tu padrino/madrina</b><br>Te entrena en el día a día y se reúne contigo 15 minutos cada semana.</div>' +
+   '<div class="mini"><b>RRHH</b><br>Te acompaña en el proceso, aplica tu encuesta de experiencia y la entrevista del día 45.</div>' +
+   '<div class="mini"><b>EHS</b><br>Resuelve cualquier duda de seguridad y certifica tu inducción.</div></div>' +
+   '<h3>Tus evaluaciones</h3>' +
+   '<p>A los <b>30, 60 y 90 días</b> tu jefe evaluará: seguridad, conocimiento del puesto, productividad, calidad, integración y disciplina operativa. Conocerás los criterios desde el día 1: sin sorpresas.</p></div>' + quizHTML("P"); }},
+ {id:"CHK", nav:"Mi checklist de ingreso", render:function(){
+   var items=["Completé el módulo 'Antes de tu primer día' antes de llegar","Recibí y entendí la agenda de mi primer día","Completé la inducción de seguridad presencial y aprobé su evaluación","Recibí mi EPP completo y firmé el resguardo","Conozco mis rutas de evacuación y mi punto de reunión","Firmé mi contrato y entregué mis documentos completos","Conozco mis prestaciones y mi forma de pago","Firmé el reglamento interior, código de ética y confidencialidad","Tengo mis accesos y herramientas de trabajo funcionando","Conozco a mi jefe directo y a mi padrino/madrina","Firmé mi Plan 30·60·90 y entiendo qué se espera de mí"];
+   var checks=items.map(function(t,i){ return '<label class="check"><input type="checkbox" '+(S["chk"+i]?"checked":"")+' onchange="S[\'chk'+i+'\']=this.checked;save();renderNav();"> '+esc(t)+'</label>'; }).join("");
+   return '<div class="card"><span class="tag">Checklist personal</span>' +
+   '<h2>Mi checklist de ingreso</h2>' +
+   '<p>Marca cada punto cuando sea verdad. Si algo te falta al final de tu primera semana, <b>repórtalo a RRHH o a tu jefe directo</b>.</p>' +
+   checks + '<button class="btn" onclick="markDone(\'CHK\')">Guardar mi checklist ✓</button></div>'; }},
+ {id:"FIN", nav:"Evaluación final y constancia", render:function(){
+   var reqs=[["PRE","Antes de tu primer día"],["A","Módulo A · Identidad MRT"],["B","Módulo B · Seguridad"],["C","Módulo C · RRHH"],["D","Módulo D · Herramientas"],["P","Inducción al puesto"],["CHK","Checklist personal"]];
+   var pend=reqs.filter(function(r){ return !S.done[r[0]]; });
+   if(pend.length){
+     return '<div class="card"><span class="tag">Cierre</span><h2>Casi listo…</h2>' +
+     '<p>Para obtener tu constancia completa primero:</p><ul>' + pend.map(function(p){return '<li>⏳ '+p[1]+'</li>';}).join("") + '</ul></div>';
+   }
+   var keys=["PRE","A","B","C","P"], sum=0; keys.forEach(function(k){ sum += (S.quiz[k]||0); });
+   var avg=Math.round(sum/keys.length);
+   return '<div class="cert" id="cert"><h2>CONSTANCIA DE INDUCCIÓN</h2>' +
+   '<p>MRT hace constar que</p><div class="name">'+esc(S.name||"[Nombre]")+'</div>' +
+   '<p>completó satisfactoriamente la <b>inducción interactiva a la empresa y al puesto</b>,<br>con una calificación promedio de <b>'+avg+'%</b> en sus evaluaciones.</p>' +
+   '<p style="margin-top:18px">Fecha: <b>'+new Date().toLocaleDateString("es-MX",{year:"numeric",month:"long",day:"numeric"})+'</b></p>' +
+   '<p style="margin-top:30px">__________________________<br>Recursos Humanos · MRT</p></div>' +
+   '<div class="card noprint" style="margin-top:16px">' +
+   '<p><b>Importante:</b> esta constancia cubre la inducción autodirigida. Tu inducción de seguridad presencial y tu DC-3 se gestionan con EHS y RRHH.</p>' +
+   '<button class="btn" onclick="window.print()">🖨️ Imprimir / guardar PDF</button>' +
+   '<button class="btn sec" onclick="resetUser()">Reiniciar módulo</button></div>'; }}
+];
+
+var picks={};
+function pick(el,key,qi,oi){
+  picks[key]=picks[key]||{}; picks[key][qi]=oi;
+  var sibs = el.parentElement.querySelectorAll(".opt");
+  for(var i=0;i<sibs.length;i++){ sibs[i].classList.remove("sel"); }
+  el.classList.add("sel");
+}
+function grade(key,n){
+  var p=picks[key]||{};
+  if(Object.keys(p).length<n){ notify("Responde todas las preguntas antes de calificar."); return; }
+  var ok=0;
+  var qdivs=document.querySelectorAll('.q[data-key="'+key+'"]');
+  for(var d=0; d<qdivs.length; d++){
+    var qdiv=qdivs[d], qi=+qdiv.getAttribute("data-q"), ans=CFG.quizzes[key][qi].a, sel=p[qi];
+    var opts=qdiv.querySelectorAll(".opt");
+    for(var oi=0; oi<opts.length; oi++){
+      opts[oi].classList.remove("right","wrong");
+      if(oi===ans) opts[oi].classList.add("right");
+      else if(oi===sel) opts[oi].classList.add("wrong");
+    }
+    var fb=qdiv.querySelector(".feedback"); fb.style.display="block";
+    if(sel===ans){ ok++; fb.textContent="✔ Correcto"; fb.style.color="var(--ok)"; }
+    else { fb.textContent="✘ Revisa la respuesta marcada en verde"; fb.style.color="var(--bad)"; }
+  }
+  var pct=Math.round(ok/n*100);
+  var sc=document.getElementById("score-"+key); sc.style.display="block";
+  if(pct>=80){
+    sc.textContent="Resultado: "+pct+"% — ¡Módulo aprobado! Continúa con la siguiente sección."; sc.style.color="var(--ok)";
+    S.quiz[key]=pct; S.done[key]=true; save(); pushUserCompletion(); renderNav();
+  } else {
+    sc.textContent="Resultado: "+pct+"% — Aún no apruebas. Repasa el contenido e inténtalo de nuevo."; sc.style.color="var(--bad)";
+  }
+}
+function markDone(k){ S.done[k]=true; save(); pushUserCompletion(); renderNav(); notify("Sección registrada como completada ✓"); }
+function setName(){
+  var v=document.getElementById("inpname").value.trim();
+  if(!v){ notify("Escribe tu nombre para comenzar."); return; }
+  S.name=v; S.done["inicio"]=true; save(); go(1);
+}
+function resetUser(){ try{ localStorage.removeItem("mrt_induccion"); }catch(e){} S={role:"user",name:"",done:{},quiz:{},mod:0}; render(); }
+function go(i){ S.mod=i; save(); render(); window.scrollTo(0,0); }
+function renderNav(){
+  var req=["inicio","PRE","A","B","C","D","P","CHK"];
+  var doneCount=req.filter(function(k){return S.done[k];}).length;
+  var pct=Math.round(doneCount/req.length*100);
+  var pb=document.getElementById("pbar"), pt=document.getElementById("ptxt"), nv=document.getElementById("nav");
+  if(!pb) return;
+  pb.style.width=pct+"%";
+  pt.textContent=pct+"% completado"+(S.name?" · "+S.name.split(" ")[0]:"");
+  nv.innerHTML=MODS.map(function(m,i){
+    return '<div class="navitem '+(i===S.mod?"active":"")+' '+(S.done[m.id]?"done":"")+'" onclick="go('+i+')">' +
+    '<span class="dot">'+(S.done[m.id]?"✓":"")+'</span><span>'+m.nav+'</span></div>'; }).join("");
+}
+function render(){
+  if(S.role!=="user"){ renderLogin(); return; }
+  document.getElementById("app").innerHTML =
+  '<div class="sync-banner" id="syncBannerMsg" style="margin:10px;border-radius:8px;"></div><div class="layout"><aside>'<h1>MRT</h1><div class="sub">Inducción interactiva · Nuevo ingreso</div>' +
+  '<div class="progresswrap"><div class="progressbar"><div id="pbar"></div></div><div class="progresstxt" id="ptxt"></div></div>' +
+  '<div id="nav"></div>' +
+  '<div class="navitem" onclick="logout()" style="margin-top:14px;opacity:.7">⎋ Salir / cambiar perfil</div></aside>' +
+  '<main id="main"></main></div>';
+  document.getElementById("main").innerHTML = MODS[S.mod].render() +
+   (S.mod>0 && S.mod<MODS.length-1 ? '<button class="btn sec noprint" onclick="go('+(S.mod+1)+')">Siguiente sección →</button>' : '');
+  renderNav();
+}
+
+/* ===== Panel de administrador ===== */
+function fld(label, path, type, lines){
+  var val = getPath(CFG, path);
+  if(lines){ val = (val||[]).join("\n"); }
+  if(type==="ta" || lines){
+    return '<div class="field"><label>'+esc(label)+'</label><textarea data-path="'+path+'" '+(lines?'data-lines="1"':'')+'>'+esc(val)+'</textarea></div>';
+  }
+  return '<div class="field"><label>'+esc(label)+'</label><input type="text" data-path="'+path+'" value="'+esc(val)+'"></div>';
+}
+function quizEditor(){
+  var h='';
+  var names={PRE:"Antes de tu primer día",A:"Módulo A · Identidad",B:"Módulo B · Seguridad",C:"Módulo C · RRHH",P:"Inducción al puesto"};
+  Object.keys(CFG.quizzes).forEach(function(key){
+    h += '<h3 style="margin-top:16px">'+esc(names[key]||key)+' <button class="btn sec" style="padding:4px 12px;font-size:12px;margin:0" onclick="addQ(\''+key+'\')">+ pregunta</button></h3>';
+    CFG.quizzes[key].forEach(function(item,qi){
+      h += '<div class="qz-block" data-quiz="'+key+'" data-idx="'+qi+'">' +
+      '<button class="del" onclick="delQ(\''+key+'\','+qi+')">Eliminar</button>' +
+      '<div class="field"><label>Pregunta '+(qi+1)+'</label><textarea class="qz-q">'+esc(item.q)+'</textarea></div>';
+      item.o.forEach(function(o,oi){
+        h += '<div class="row"><span>'+String.fromCharCode(65+oi)+'</span><input type="text" class="qz-o" value="'+esc(o)+'"></div>';
+      });
+      h += '<div class="row" style="margin-top:8px"><span>✔</span><select class="qz-a">' +
+      item.o.map(function(_,oi){ return '<option value="'+oi+'" '+(item.a===oi?"selected":"")+'>Correcta: '+String.fromCharCode(65+oi)+'</option>'; }).join("") +
+      '</select></div></div>';
+    });
+  });
+  return h;
+}
+function addQ(key){ collectAdmin(); CFG.quizzes[key].push({q:"Nueva pregunta…",o:["Opción A","Opción B","Opción C"],a:0}); renderAdmin(); }
+function delQ(key,qi){ collectAdmin(); CFG.quizzes[key].splice(qi,1); renderAdmin(); }
+function collectAdmin(){
+  var inputs=document.querySelectorAll("[data-path]");
+  for(var i=0;i<inputs.length;i++){
+    var el=inputs[i], v=el.value;
+    if(el.getAttribute("data-lines")){ v=v.split("\n").map(function(x){return x.trim();}).filter(function(x){return x;}); }
+    setPath(CFG, el.getAttribute("data-path"), v);
+  }
+  for(var k=0;k<4;k++){
+    var n=document.getElementById("val-n-"+k), d=document.getElementById("val-d-"+k);
+    if(n&&d){ CFG.empresa.valores[k]={n:n.value,d:d.value}; }
+  }
+  var blocks=document.querySelectorAll(".qz-block");
+  var nq={};
+  for(var b=0;b<blocks.length;b++){
+    var bl=blocks[b], key=bl.getAttribute("data-quiz");
+    nq[key]=nq[key]||[];
+    var q=bl.querySelector(".qz-q").value;
+    var os=bl.querySelectorAll(".qz-o"), oarr=[];
+    for(var o=0;o<os.length;o++){ oarr.push(os[o].value); }
+    var a=parseInt(bl.querySelector(".qz-a").value,10)||0;
+    nq[key].push({q:q,o:oarr,a:a});
+  }
+  if(Object.keys(nq).length){ Object.keys(nq).forEach(function(k){ CFG.quizzes[k]=nq[k]; }); }
+}
+function saveAdmin(){
+  collectAdmin();
+  saveCfgLocal();
+  syncCfgToGun();
+  if(gunReady) {
+    notify("✅ Cambios guardados y sincronizados. Todas las computadoras conectadas recibirán los cambios en segundos.");
+  } else {
+    notify("Cambios guardados localmente. Sin conexión a internet ahora; sincronizarán cuando haya red.");
+  }
+  renderAdmin();
+}
+function buildExportHtml(){
+  collectAdmin();
+  var out = JSON.parse(JSON.stringify(CFG));
+  out.version = Date.now();
+  var json = JSON.stringify(out, null, 1);
+  var open = '<script id="mrt-config" type="application/json">';
+  var i0 = PRISTINE.indexOf(open);
+  var i1 = PRISTINE.indexOf("<\/script>", i0);
+  return PRISTINE.slice(0, i0 + open.length) + json + PRISTINE.slice(i1);
+}
+function exportHtml(){
+  var html = buildExportHtml();
+  try{
+    var blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "MRT_Induccion_Interactiva.html";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    notify("Archivo descargado. Distribúyelo por correo, USB o carpeta compartida: funciona sin internet en cualquier computadora.");
+  }catch(e){ notify("Tu navegador no permitió la descarga automática."); }
+}
+function resetCfg(){ CFG=JSON.parse(JSON.stringify(BAKED)); try{ localStorage.removeItem("mrt_cfg"); }catch(e){} renderAdmin(); }
+function buildResultsHTML(){
+  var keys=["PRE","A","B","C","P","D","CHK"];
+  var names={PRE:"Pre-inducción",A:"Identidad MRT",B:"Seguridad",C:"RRHH",P:"Puesto 30·60·90",D:"Herramientas",CHK:"Checklist"};
+  var completionList = Object.keys(allCompletions);
+  if(completionList.length === 0){
+    return '<p class="locknote" id="resultsPanel">Aún no hay completaciones registradas en la red. Cuando un colaborador apruebe un módulo, aparecerá aquí.</p>';
+  }
+  var h = '<div id="resultsPanel"><p style="font-size:13px;color:#555;margin-bottom:10px"><b>'+completionList.length+'</b> colaborador(es) con actividad registrada en la red:</p>';
+  h += '<table><tr><th>Colaborador</th>';
+  keys.forEach(function(k){ h += '<th>'+esc(names[k]||k)+'</th>'; });
+  h += '<th>Última actividad</th></tr>';
+  completionList.sort().forEach(function(nm){
+    var data = allCompletions[nm];
+    h += '<tr><td><b>'+esc(nm)+'</b></td>';
+    keys.forEach(function(k){
+      var approved = data.done && data.done[k];
+      var score = data.quiz && data.quiz[k] != null ? data.quiz[k]+'%' : '';
+      if(approved) h += '<td style="background:#E8F8EF;color:#1a6e3a;font-weight:700">✓ '+score+'</td>';
+      else h += '<td style="color:#aaa">—</td>';
+    });
+    var ts = data.ts ? new Date(data.ts).toLocaleString('es-MX') : '—';
+    h += '<td style="font-size:12px;color:#888">'+esc(ts)+'</td></tr>';
+  });
+  h += '</table></div>';
+  return h;
+}
+
+function localResults(){
+  return '<div id="resultsPanel">'+buildResultsHTML()+'</div>';
+}
+function renderAdmin(){
+  var c=CFG;
+  document.getElementById("app").innerHTML =
+  '<main class="full" style="padding:30px 20px">' +
+  '<div class="card"><span class="tag">Perfil administrador</span><span class="badge-admin">RRHH</span>' +
+  '<h2>Editor del módulo de inducción</h2>' +
+  '<p>Edita el contenido, guarda y descarga la <b>versión actualizada</b> del archivo para distribuirla. El archivo funciona sin internet, en cualquier computadora y red (correo, USB, carpeta compartida o intranet).</p>' +
+  '<div class="sync-banner" id="syncBannerAdmin"><span id="syncBannerMsg"></span></div>' +
+  '<button class="btn" onclick="saveAdmin()">💾 Guardar cambios</button>' +
+  '<button class="btn dark" onclick="exportHtml()">⬇️ Descargar versión actualizada</button>' +
+  '<button class="btn sec" onclick="logout()">⎋ Salir</button>' +
+  '<button class="btn sec" onclick="if(window.confirm&&confirm(\'¿Restablecer todo el contenido original?\')){resetCfg();}">Restablecer original</button></div>' +
+
+  '<fieldset><legend>Acceso</legend>' + fld("Contraseña de administrador","adminPass","txt") + '</fieldset>' +
+
+  '<fieldset><legend>Pre-inducción · Antes de tu primer día</legend>' +
+  fld("Mensaje de bienvenida previa","prellegada.mensaje","ta") +
+  fld("Fecha, hora y lugar de presentación","prellegada.horario","ta") +
+  fld("Código de vestimenta","prellegada.vestimenta","txt") +
+  fld("Transporte / cómo llegar","prellegada.transporte","ta") +
+  fld("Qué debe llevar (una línea por elemento)","prellegada.queLlevar","ta",true) +
+  fld("Contacto de RRHH para dudas previas","prellegada.contactoDudas","txt") + '</fieldset>' +
+
+  '<fieldset><legend>Empresa · Identidad MRT</legend>' +
+  fld("Historia","empresa.historia","ta") +
+  fld("Misión","empresa.mision","ta") +
+  fld("Visión","empresa.vision","ta") +
+  fld("Años de experiencia (dato)","empresa.anios","txt") +
+  fld("Número de colaboradores (dato)","empresa.colaboradores","txt") +
+  fld("Sitios / operaciones","empresa.sitios","txt") +
+  fld("Organización (a quién acudir)","empresa.organigrama","ta") +
+  '<label style="font-size:13px;font-weight:700">Valores (nombre y significado)</label>' +
+  c.empresa.valores.map(function(v,i){ return '<div class="row" style="display:flex;gap:8px;margin:6px 0"><input type="text" id="val-n-'+i+'" style="max-width:220px" value="'+esc(v.n)+'"><input type="text" id="val-d-'+i+'" value="'+esc(v.d)+'"></div>'; }).join("") +
+  '</fieldset>' +
+
+  '<fieldset><legend>Seguridad (EHS)</legend>' +
+  c.seguridad.reglas.map(function(r,i){ return fld("Regla que salva vidas "+(i+1),"seguridad.reglas."+i,"ta"); }).join("") +
+  fld("Número / canal de emergencias","seguridad.emergencias","txt") +
+  fld("Lineamientos ambientales del sitio","seguridad.ambiente","ta") + '</fieldset>' +
+
+  '<fieldset><legend>RRHH y prestaciones</legend>' +
+  fld("Forma de pago","rrhh.pago","txt") +
+  fld("Prestaciones (una por línea)","rrhh.prestaciones","ta",true) +
+  fld("Contacto de nómina","rrhh.contactoNomina","txt") +
+  fld("Canal de denuncia","rrhh.canalDenuncia","txt") + '</fieldset>' +
+
+  '<fieldset><legend>Herramientas y contactos</legend>' +
+  fld("Herramientas y sistemas (texto del Módulo D)","herramientas","ta") +
+  fld("Contacto RRHH","contactos.rrhh","txt") +
+  fld("Contacto EHS","contactos.ehs","txt") +
+  fld("Emergencias","contactos.emergencias","txt") + '</fieldset>' +
+
+  '<fieldset><legend>Cuestionarios (preguntas, opciones y respuesta correcta)</legend>' + quizEditor() + '</fieldset>' +
+
+  '<fieldset><legend>Resultados en este equipo</legend>' + localResults() + '</fieldset>' +
+
+  '<div class="card"><h3 style="margin-top:0">¿Cómo distribuyo el módulo?</h3>' +
+  '<p>1) Edita y <b>guarda</b>. 2) <b>Descarga la versión actualizada</b>. 3) Envía el archivo HTML por correo o mensajería al nuevo ingreso antes de su primer día, o colócalo en una carpeta compartida/intranet. Se abre con doble clic en cualquier navegador, <b>sin internet y sin instalar nada</b>.</p></div>' +
+  '</main>';
+  window.scrollTo(0,0);
+}
+
+/* ===== Arranque ===== */
+listenGun();
+renderLogin();
+</script>
+<div class="sync-bar" id="syncBar"><span class="sync-dot" id="syncDot"></span><span id="syncLabel">Conectando...</span><span style="margin-left:auto;opacity:.6">Sync global · MRT Inducción</span></div>
+</body>
+</html>
